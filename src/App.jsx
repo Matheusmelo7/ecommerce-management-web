@@ -5,6 +5,8 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ProductsPage from "./pages/ProductsPage";
 import RegisterPage from "./pages/RegisterPage";
 import UserProfilePage from "./pages/UserProfilePage";
+import CartPage from "./pages/CartPage";
+
 
 
 import "./App.css";
@@ -21,6 +23,7 @@ function App() {
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 				<Route path="/register" element={<RegisterPage />} />				
 				<Route path="/profile" element={<UserProfilePage />} />
+				<Route path="/cart" element={<CartPage />} />  {/* Página do Carrinho */}
             </Routes>
         </Router>
     );

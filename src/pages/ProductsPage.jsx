@@ -6,7 +6,9 @@ import { FaUserCircle } from "react-icons/fa";  // Ícone de perfil de usuário
 function ProductsPage() {
     const [products, setProducts] = useState([]);
     const [cart, setCart] = useState([]);
-    const navigate = useNavigate();
+    const [orderId, setOrderId] = useState(null);  // Estado para armazenar o ID do pedido
+    const [quantity, setQuantity] = useState(1);  // Estado para a quantidade do produto
+    const navigate = useNavigate();  // Navegação programática
     const [isAuthenticated, setIsAuthenticated] = useState(false);
 
     useEffect(() => {
@@ -21,22 +23,88 @@ function ProductsPage() {
         fetchProducts();
 
         // Verificar se o usuário está autenticado
-        const token = localStorage.getItem('authToken'); // ou qualquer outro método de autenticação
+        const token = localStorage.getItem('authToken'); // Já deve conter o token completo (com 'Bearer')
         if (token) {
             setIsAuthenticated(true);
         } else {
             setIsAuthenticated(false);
         }
+
+        // Verificar se já existe um pedido no localStorage
+        const storedOrderId = localStorage.getItem('orderId');
+        if (storedOrderId) {
+            setOrderId(storedOrderId);  // Se o pedido já existir no localStorage, recuperamos o ID
+        }
     }, []);
 
-    const addToCart = (product) => {
+    // Função para criar o pedido
+    const createOrder = async (id_costumer) => {
+        const accessToken = localStorage.getItem('authToken'); // O token já está completo com 'Bearer'
+        if (!accessToken) {
+            alert("Você precisa estar logado para criar um pedido.");
+            navigate("/login");
+            return;
+        }
+
+        try {
+            const response = await axios.post("http://localhost:8080/ecommerce-management/v1/orders/create", 
+                { id_costumer },
+                { headers: { Authorization: `${accessToken}` } }  // Envia o token completo com 'Bearer'
+            );
+            const newOrderId = response.data.id_order;
+            setOrderId(newOrderId); // Armazenar o ID do pedido no estado
+            localStorage.setItem('orderId', newOrderId); // Armazenar o ID no localStorage para persistência
+            return newOrderId;
+        } catch (error) {
+            console.error("Erro ao criar o pedido:", error);
+            alert("Erro ao criar o pedido. Verifique suas permissões.");
+        }
+    };
+
+    // Função para adicionar item ao carrinho
+    const addToCart = async (product) => {
         if (!isAuthenticated) {
-            // Se não estiver autenticado, redireciona para o login
             alert("Você precisa estar logado para adicionar itens ao carrinho.");
             navigate("/login");
-        } else {
-            setCart((prevCart) => [...prevCart, product]);
-            alert(`${product.name} foi adicionado ao carrinho!`);
+            return;
+        }
+
+        // Verifica se já existe um pedido, caso contrário cria um novo
+        if (!orderId) {
+            const userId = localStorage.getItem('idUser');  // Certifique-se de armazenar o userId no storage
+            const newOrderId = await createOrder(userId);  // Cria um novo pedido se não existir
+            setOrderId(newOrderId); // Garantir que o orderId seja atualizado
+        }
+
+        // Adiciona o produto com a quantidade selecionada ao carrinho
+        const cartItem = { ...product, quantity };
+        setCart((prevCart) => [...prevCart, cartItem]);
+
+        // Cria o item no pedido
+        try {
+            const accessToken = localStorage.getItem('authToken'); // O token já está completo com 'Bearer'
+            if (!accessToken) {
+                alert("Você precisa estar logado para adicionar itens ao pedido.");
+                navigate("/login");
+                return;
+            }
+
+            if (orderId) {
+                await axios.post("http://localhost:8080/ecommerce-management/v1/orders/items/create", 
+                    { 
+                        quantity, 
+                        id_order: orderId, // Passando o ID do pedido corretamente
+                        id_product: product.id 
+                    },
+                    { headers: { Authorization: `${accessToken}` } }  // Envia o token completo com 'Bearer'
+                );
+                alert(`${product.name} foi adicionado ao carrinho com ${quantity} unidade(s)!`);
+            } else {
+                alert("Erro: Pedido não encontrado.");
+            }
+        } catch (error) {
+            console.error("Erro ao adicionar item ao pedido:", error);
+            alert("Erro ao adicionar item ao pedido.");
         }
     };
 
@@ -44,10 +112,12 @@ function ProductsPage() {
         // Limpar o localStorage e redirecionar para a página de login
         localStorage.removeItem('authToken');
         localStorage.removeItem('idUser');
+        localStorage.removeItem('orderId'); // Remover o ID do pedido do localStorage
         setIsAuthenticated(false);
+        setOrderId(null); // Limpar o estado do orderId
         navigate("/login");
     };
-    
+
     const productImages = {
         1: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQvxHYbwHVx9nZs5UQhBVXMBygPuz7jjS_rIw&s",
         2: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQvxHYbwHVx9nZs5UQhBVXMBygPuz7jjS_rIw&s",
@@ -64,11 +134,22 @@ function ProductsPage() {
             }}>
                 <h1 style={{ margin: 0 }}>Grain & Flavor</h1>
                 <div style={{ display: "flex", gap: "20px", alignItems: "center" }}>
-                    <a href="#cart" style={{
-                        color: "#fff", textDecoration: "none", fontSize: "18px", display: "flex", alignItems: "center"
-                    }}>
+                    <button
+                        onClick={() => navigate("/cart")}  // Usamos o navigate para redirecionar para a página do carrinho
+                        style={{
+                            background: "#007BFF",
+                            color: "#fff",
+                            border: "none",
+                            padding: "10px 20px",
+                            borderRadius: "5px",
+                            cursor: "pointer",
+                            fontSize: "16px",
+                            display: "flex",
+                            alignItems: "center"
+                        }}
+                    >
                         Carrinho ({cart.length})
-                    </a>
+                    </button>
                     <button
                         onClick={() => navigate("/profile")}  // Rota para página de dados do usuário
                         style={{
@@ -121,6 +202,21 @@ function ProductsPage() {
                             <p style={{ fontSize: "14px", color: "#555" }}>{product.description}</p>
                             <p style={{ fontSize: "16px", fontWeight: "bold" }}>R${(product.price / 100).toFixed(2)}</p>
                             <p style={{ fontSize: "14px", color: "#777" }}>Estoque: {product.stock_quantity}</p>
+
+                            {/* Quantidade do produto */}
+                            <div style={{ margin: "10px 0" }}>
+                                <input
+                                    type="number"
+                                    value={quantity}
+                                    onChange={(e) => setQuantity(Math.max(1, e.target.value))}
+                                    min="1"
+                                    style={{
+                                        padding: "5px", fontSize: "14px", width: "60px", textAlign: "center",
+                                        borderRadius: "5px", border: "1px solid #ccc"
+                                    }}
+                                />
+                            </div>
+
                             <button
                                 onClick={() => addToCart(product)}
                                 style={{
