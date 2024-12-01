@@ -289,15 +289,6 @@ function CartPage() {
                   >
                     Preço
                   </th>
-                  <th
-                    style={{
-                      padding: "10px",
-                      border: "1px solid #ddd",
-                      textAlign: "center",
-                    }}
-                  >
-                    Total
-                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -335,16 +326,7 @@ function CartPage() {
                         textAlign: "center",
                       }}
                     >
-                      R${(item.price / 100).toFixed(2)}
-                    </td>
-                    <td
-                      style={{
-                        padding: "10px",
-                        border: "1px solid #ddd",
-                        textAlign: "center",
-                      }}
-                    >
-                      R${(item.total / 100).toFixed(2)}
+                      R${item.price }
                     </td>
                   </tr>
                 ))}
