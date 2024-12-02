@@ -56,7 +56,6 @@ function ProductsPage() {
             localStorage.setItem('orderId', newOrderId); // Armazenar o ID no localStorage para persistência
             return newOrderId;
         } catch (error) {
-            console.error("Erro ao criar o pedido:", error);
             alert("Erro ao criar o pedido. Verifique suas permissões.");
         }
     };
@@ -76,6 +75,7 @@ function ProductsPage() {
             setOrderId(newOrderId); // Garantir que o orderId seja atualizado
         }
 
+	
         // Adiciona o produto com a quantidade selecionada ao carrinho
         const quantity = productQuantities[product.id] || 1; // Obtém a quantidade do estado ou usa 1 por padrão
         const cartItem = { ...product, quantity };
@@ -100,9 +100,7 @@ function ProductsPage() {
                     { headers: { Authorization: `${accessToken}` } }  // Envia o token completo com 'Bearer'
                 );
                 alert(`${product.name} foi adicionado ao carrinho com ${quantity} unidade(s)!`);
-            } else {
-                alert("Erro: Pedido não encontrado.");
-            }
+            } 
         } catch (error) {
             console.error("Erro ao adicionar item ao pedido:", error);
             alert("Erro ao adicionar item ao pedido.");

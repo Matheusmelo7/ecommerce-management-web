@@ -49,7 +49,7 @@ function LoginPage() {
             });
             setForgotPasswordMessage("Instruções para recuperação de senha foram enviadas para o seu e-mail.");
         } catch (error) {
-            setForgotPasswordMessage("Erro ao tentar enviar a solicitação de recuperação de senha.");
+            setForgotPasswordMessage("Erro - email não registrado.");
         }
     };
 
